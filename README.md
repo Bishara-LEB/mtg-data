@@ -4,8 +4,8 @@ A daily mirror of public Magic: The Gathering data, used for Commander deck buil
 
 Published once a day as the release named **latest**:
 
-- `scryfall_oracle_cards.json.gz`: every card's current Oracle text, types, colour identity, legalities (Scryfall bulk data)
-- `scryfall_rulings.json.gz`: every official ruling (Scryfall bulk data)
+- `scryfall_oracle_cards.jsonl.gz`: every card's current Oracle text, types, colour identity, legalities (Scryfall bulk data)
+- `scryfall_rulings.jsonl.gz`: every official ruling (Scryfall bulk data)
 - `comprehensive_rules.txt.gz`: the current Comprehensive Rules (Wizards of the Coast)
 - `cardkingdom_pricelist.json.gz`: Card Kingdom's public price list, when available
 - `manifest.json`: dates, sources and checksums

@@ -26,6 +26,8 @@ def get(url, tries=3):
 
 
 def save(name, data, source, extra=None):
+    if data[:2] == b"\x1f\x8b":  # source was already gzipped (Scryfall serves .jsonl.gz); store it once, not twice
+        data = gzip.decompress(data)
     path = os.path.join(OUT, name)
     with gzip.open(path, "wb", compresslevel=9) as f:
         f.write(data)
@@ -45,7 +47,7 @@ try:
             if not uri:
                 raise RuntimeError(f"no download link for {item.get('type')}; fields: {sorted(item)}")
             data = get(uri)
-            save(f"scryfall_{item['type']}.json.gz", data, uri, {"scryfall_updated_at": item.get("updated_at")})
+            save(f"scryfall_{item['type']}.jsonl.gz", data, uri, {"scryfall_updated_at": item.get("updated_at")})
             time.sleep(1)
 except Exception as e:
     errors.append(f"Scryfall: {type(e).__name__}: {e}")
