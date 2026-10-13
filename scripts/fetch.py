@@ -34,25 +34,33 @@ def save(name, data, source, extra=None):
     print(f"saved {name}: {len(data):,} bytes")
 
 
-# 1. Scryfall bulk data
-bulk = json.loads(get("https://api.scryfall.com/bulk-data"))
-for item in bulk["data"]:
-    if item["type"] in ("oracle_cards", "rulings", "default_cards"):
-        if item["type"] == "default_cards":
-            continue  # every printing; large and not needed for rules work
-        data = get(item["download_uri"])
-        save(f"scryfall_{item['type']}.json.gz", data, item["download_uri"], {"scryfall_updated_at": item["updated_at"]})
-        time.sleep(1)
+errors = []
+
+# 1. Scryfall bulk data (required)
+try:
+    bulk = json.loads(get("https://api.scryfall.com/bulk-data"))
+    for item in bulk["data"]:
+        if item["type"] in ("oracle_cards", "rulings"):
+            data = get(item["download_uri"])
+            save(f"scryfall_{item['type']}.json.gz", data, item["download_uri"], {"scryfall_updated_at": item["updated_at"]})
+            time.sleep(1)
+except Exception as e:
+    errors.append(f"Scryfall: {type(e).__name__}: {e}")
 
 # 2. Comprehensive Rules (find the current .txt link on the rules page)
-page = get("https://magic.wizards.com/en/rules").decode("utf-8", "replace")
-links = re.findall(r'https://media\.wizards\.com/[^"\']+\.txt', page)
-if not links:
-    raise SystemExit("Could not find the Comprehensive Rules .txt link on magic.wizards.com/en/rules")
-cr_url = links[0].replace(" ", "%20")
-cr = get(cr_url)
-eff = re.search(rb"effective as of ([A-Za-z]+ \d{1,2}, \d{4})", cr)
-save("comprehensive_rules.txt.gz", cr, cr_url, {"effective": eff.group(1).decode() if eff else "unknown"})
+try:
+    page = get("https://magic.wizards.com/en/rules").decode("utf-8", "replace")
+    links = re.findall(r'(https?://media\.wizards\.com/[^"\'\s<>]+?\.txt)', page)
+    links += ["https:" + l for l in re.findall(r'(//media\.wizards\.com/[^"\'\s<>]+?\.txt)', page)]
+    if not links:
+        snippet = re.findall(r'href="([^"]+)"', page)
+        raise RuntimeError("no .txt link found; sample links: " + ", ".join([l for l in snippet if "rule" in l.lower()][:10]))
+    cr_url = links[0].replace(" ", "%20")
+    cr = get(cr_url)
+    eff = re.search(rb"effective as of ([A-Za-z]+ \d{1,2}, \d{4})", cr)
+    save("comprehensive_rules.txt.gz", cr, cr_url, {"effective": eff.group(1).decode() if eff else "unknown"})
+except Exception as e:
+    errors.append(f"Comprehensive Rules: {type(e).__name__}: {e}")
 
 # 3. Card Kingdom price list (optional)
 try:
@@ -63,6 +71,9 @@ except Exception as e:
     manifest["notes"].append(f"Card Kingdom price list skipped: {e}")
     print("Card Kingdom price list skipped:", e)
 
+manifest["errors"] = errors
 with open(os.path.join(OUT, "manifest.json"), "w") as f:
     json.dump(manifest, f, indent=1)
 print(json.dumps(manifest, indent=1))
+if errors:
+    sys.exit(1)
