@@ -25,3 +25,5 @@ python3 tools/mtgdb.py card "Arcane Denial"
 python3 tools/mtgdb.py rule 122.1d
 python3 tools/mtgdb.py search "stun counter" --id WUBG
 ```
+
+`tools/combos.py` lists every known combo in a deck list (and combos one card away). `tools/roles.py` finds every legal card in a colour identity that does a given job (ramp, draw, removal by type, counters, wipes, protection, graveyard hate, recursion) or matches a theme.

@@ -43,7 +43,7 @@ def build():
       CREATE TABLE meta(key TEXT PRIMARY KEY, value TEXT);
       CREATE TABLE cards(oracle_id TEXT PRIMARY KEY, name TEXT, front TEXT, mana_cost TEXT, cmc REAL, type_line TEXT,
                          oracle_text TEXT, power TEXT, toughness TEXT, loyalty TEXT, color_identity TEXT, keywords TEXT,
-                         commander TEXT, game_changer INTEGER, layout TEXT, released_at TEXT, preview INTEGER, is_card INTEGER);
+                         commander TEXT, game_changer INTEGER, layout TEXT, released_at TEXT, preview INTEGER, is_card INTEGER, edhrec_rank INTEGER);
       CREATE INDEX cards_name ON cards(name COLLATE NOCASE);
       CREATE INDEX cards_front ON cards(front COLLATE NOCASE);
       CREATE TABLE rulings(oracle_id TEXT, published_at TEXT, source TEXT, comment TEXT);
@@ -69,8 +69,8 @@ def build():
                          c.get("mana_cost") or (faces[0].get("mana_cost") if faces else ""), c.get("cmc"), c.get("type_line"),
                          full_text(c), c.get("power"), c.get("toughness"), loyalty, "".join(c.get("color_identity", [])),
                          ",".join(c.get("keywords", [])), c.get("legalities", {}).get("commander"), int(bool(c.get("game_changer"))),
-                         c.get("layout"), c.get("released_at"), int(bool(c.get("preview"))), int(c.get("layout") not in NOT_CARDS)))
-    con.executemany("INSERT OR REPLACE INTO cards VALUES (" + ",".join("?" * 18) + ")", rows)
+                         c.get("layout"), c.get("released_at"), int(bool(c.get("preview"))), int(c.get("layout") not in NOT_CARDS), c.get("edhrec_rank")))
+    con.executemany("INSERT OR REPLACE INTO cards VALUES (" + ",".join("?" * 19) + ")", rows)
 
     with gzip.open(os.path.join(DL, "scryfall_rulings.jsonl.gz"), "rt", encoding="utf-8") as f:
         rr = []
