@@ -13,3 +13,14 @@ Published once a day as the release named **latest**:
 Card data courtesy of [Scryfall](https://scryfall.com). Magic: The Gathering is property of Wizards of the Coast. This repository contains no personal data and no secrets.
 
 To refresh by hand: Actions tab, "Update MTG data", "Run workflow".
+
+## Local lookup tool
+
+`tools/mtgdb.py` downloads the latest release and builds a searchable SQLite database:
+
+```
+python3 tools/mtgdb.py update
+python3 tools/mtgdb.py card "Arcane Denial"
+python3 tools/mtgdb.py rule 122.1d
+python3 tools/mtgdb.py search "stun counter" --id WUBG
+```
