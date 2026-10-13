@@ -13,6 +13,7 @@ HERE = os.environ.get("MTGDB_DIR", os.path.dirname(os.path.abspath(__file__)))
 DL = os.path.join(HERE, "dl")
 DB = os.path.join(HERE, "mtg.db")
 REPO = "Bishara-LEB/mtg-data"
+NOT_LEGAL_PRINTINGS = {"Collectors Ed", "Collectors Ed Intl", "World Championships", "Magic 30th Anniversary Edition"}
 NOT_CARDS = {"token", "double_faced_token", "emblem", "art_series", "vanguard", "scheme", "planar", "augment", "host"}
 
 
@@ -103,6 +104,8 @@ def build():
     for x in ck:
         if str(x.get("is_foil")).lower() == "true":
             continue
+        if x.get("edition") in NOT_LEGAL_PRINTINGS:   # gold-bordered / non-tournament-legal reprints: not real cards for a no-proxy deck
+            continue
         cv = x.get("condition_values") or {}
         if cv.get("nm_qty", 0) and float(cv.get("nm_price") or 0) > 0:
             ckrows.append((x["name"], x["edition"], float(cv["nm_price"]), cv["nm_qty"], x.get("scryfall_id")))
@@ -158,7 +161,10 @@ def check_quote(quote, name, con=None):
     """True if `quote` appears word for word in the card's Oracle text (used to verify Auditor citations)."""
     c = card(name, con)
     norm = lambda s: re.sub(r"\s+", " ", s.replace("’", "'")).strip().lower()
-    return bool(c) and norm(quote) in norm(c["oracle_text"])
+    if not c:
+        return False
+    hay = " ".join([c["oracle_text"] or "", c["type_line"] or "", c["mana_cost"] or ""] + [r["text"] for r in c["rulings"]])
+    return norm(quote) in norm(hay)
 
 
 if __name__ == "__main__":
