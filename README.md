@@ -7,6 +7,7 @@ Published once a day as the release named **latest**:
 - `scryfall_oracle_cards.jsonl.gz`: every card's current Oracle text, types, colour identity, legalities (Scryfall bulk data)
 - `scryfall_rulings.jsonl.gz`: every official ruling (Scryfall bulk data)
 - `comprehensive_rules.txt.gz`: the current Comprehensive Rules (Wizards of the Coast)
+- `spellbook_variants.json.gz`: every known combo from [Commander Spellbook](https://commanderspellbook.com) (MIT-licensed project; bulk file published for scheduled download)
 - `cardkingdom_pricelist.json.gz`: Card Kingdom's public price list, when available
 - `manifest.json`: dates, sources and checksums
 

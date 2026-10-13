@@ -2,6 +2,7 @@
 Sources:
   - Scryfall bulk data (Oracle cards and rulings): https://scryfall.com/docs/api/bulk-data
   - Comprehensive Rules (plain text) linked from https://magic.wizards.com/en/rules
+  - Commander Spellbook combo database (bulk file they publish for scheduled download)
   - Card Kingdom public price list (optional; skipped if unavailable)
 """
 import gzip, hashlib, json, os, re, sys, time, urllib.request
@@ -67,7 +68,17 @@ try:
 except Exception as e:
     errors.append(f"Comprehensive Rules: {type(e).__name__}: {e}")
 
-# 3. Card Kingdom price list (optional)
+# 3. Commander Spellbook combos. Their API docs ask consumers to fetch this bulk file on a schedule
+#    rather than paging the API: https://github.com/SpaceCowMedia/commander-spellbook-backend/blob/master/docs/api.md
+try:
+    sb = get("https://json.commanderspellbook.com/variants.json.gz")
+    doc = json.loads(gzip.decompress(sb) if sb[:2] == b"\x1f\x8b" else sb)
+    save("spellbook_variants.json.gz", sb, "https://json.commanderspellbook.com/variants.json.gz",
+         {"spellbook_timestamp": doc.get("timestamp"), "variants": len(doc.get("variants", []))})
+except Exception as e:
+    errors.append(f"Commander Spellbook: {type(e).__name__}: {e}")
+
+# 4. Card Kingdom price list (optional)
 try:
     ck = get("https://api.cardkingdom.com/api/v2/pricelist")
     json.loads(ck)  # make sure it's JSON
