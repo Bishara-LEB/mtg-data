@@ -40,9 +40,12 @@ errors = []
 try:
     bulk = json.loads(get("https://api.scryfall.com/bulk-data"))
     for item in bulk["data"]:
-        if item["type"] in ("oracle_cards", "rulings"):
-            data = get(item["download_uri"])
-            save(f"scryfall_{item['type']}.json.gz", data, item["download_uri"], {"scryfall_updated_at": item["updated_at"]})
+        if item.get("type") in ("oracle_cards", "rulings"):
+            uri = item.get("download_uri") or next((v for k, v in item.items() if isinstance(v, str) and "download" in k and v.startswith("http")), None)
+            if not uri:
+                raise RuntimeError(f"no download link for {item.get('type')}; fields: {sorted(item)}")
+            data = get(uri)
+            save(f"scryfall_{item['type']}.json.gz", data, uri, {"scryfall_updated_at": item.get("updated_at")})
             time.sleep(1)
 except Exception as e:
     errors.append(f"Scryfall: {type(e).__name__}: {e}")
@@ -50,12 +53,12 @@ except Exception as e:
 # 2. Comprehensive Rules (find the current .txt link on the rules page)
 try:
     page = get("https://magic.wizards.com/en/rules").decode("utf-8", "replace")
-    links = re.findall(r'(https?://media\.wizards\.com/[^"\'\s<>]+?\.txt)', page)
-    links += ["https:" + l for l in re.findall(r'(//media\.wizards\.com/[^"\'\s<>]+?\.txt)', page)]
+    # file names contain spaces, e.g. "MagicCompRules 20260925.txt"
+    links = re.findall(r'(https?://media\.wizards\.com/[^"\'<>]+?\.txt)', page)
     if not links:
         snippet = re.findall(r'href="([^"]+)"', page)
         raise RuntimeError("no .txt link found; sample links: " + ", ".join([l for l in snippet if "rule" in l.lower()][:10]))
-    cr_url = links[0].replace(" ", "%20")
+    cr_url = sorted(set(links))[-1].replace("&#32;", " ").replace(" ", "%20")  # latest dated file
     cr = get(cr_url)
     eff = re.search(rb"effective as of ([A-Za-z]+ \d{1,2}, \d{4})", cr)
     save("comprehensive_rules.txt.gz", cr, cr_url, {"effective": eff.group(1).decode() if eff else "unknown"})
